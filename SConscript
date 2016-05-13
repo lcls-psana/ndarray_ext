@@ -10,6 +10,7 @@
 # SConscript file for any SIT project
 Import('*')
 
+import os
 from os.path import join as pjoin
 from SConsTools.standardExternalPackage import standardExternalPackage
 
@@ -37,14 +38,31 @@ from SConsTools.standardExternalPackage import standardExternalPackage
 
 # here is an example setting up a fictional package
 
-pkg = "ndarray"
-pkg_ver = "1.1.5"
-# version change is needed due to indirect dependency on a newer
-# version of the Boost library on those platforms.
-if env['SIT_ARCH_OS'] in ('rhel6','rhel7') : pkg_ver = pkg_ver + "a"
+assert env.get('CONDA',False), "not conda build"
 
-PREFIX = pjoin('$SIT_EXTERNAL_SW', pkg, pkg_ver)
+pkg = "ndarray"
+cdir = os.path.abspath(os.curdir)
+reldir = os.path.split(cdir)[0]
+extpkgs_dir = pjoin(reldir, 'extpkgs')
+assert os.path.exists(extpkgs_dir), "No extpkgs dir in release."
+srcpkgdir = pjoin(extpkgs_dir, pkg)
+assert os.path.exists(srcpkgdir), \
+    "The source package: %s for this proxy package is not in the release" % pkg
+PREFIX = pjoin(cdir, env['SIT_ARCH'], 'include')
+if not os.path.exists(PREFIX): os.mkdir(PREFIX)
+
+build_cmds_and_error_messages = [
+    ("DESTDIR=%s make" % PREFIX, "make failed"),
+    ("DESTDIR=%s make install" % PREFIX, "make install failed")
+]
+
+os.chdir(srcpkgdir)
+for cmd, err in build_cmds_and_error_messages:
+    print cmd
+    assert 0 == os.system(cmd), "%s: %s" % (msg, cmd)
+os.chdir(cdir)
+
 INCDIR = "ndarray"
 DOCGEN = {'doxy-all': pjoin('arch', '$SIT_ARCH', 'geninc', pkg)}
-
+DEPS = ['boost']
 standardExternalPackage ( pkg, **locals() )
