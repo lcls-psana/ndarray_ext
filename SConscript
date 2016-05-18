@@ -12,6 +12,8 @@ Import('*')
 
 import os
 from os.path import join as pjoin
+from SConsTools.buildExternalPackage import buildExternalPackage
+from SConsTools.buildExternalPackage import prefixForBuildExternal
 from SConsTools.standardExternalPackage import standardExternalPackage
 
 #
@@ -35,32 +37,15 @@ from SConsTools.standardExternalPackage import standardExternalPackage
 #    DEPS     - names of other packages that we depend upon
 #    PKGINFO  - package information, such as RPM package name
 
+pkg = 'ndarray'
+PREFIX = prefixForBuildExternal(pkg)
 
-# here is an example setting up a fictional package
-
-assert env.get('CONDA',False), "not conda build"
-
-pkg = "ndarray"
-cdir = os.path.abspath(os.curdir)
-reldir = os.path.split(cdir)[0]
-extpkgs_dir = pjoin(reldir, 'extpkgs')
-assert os.path.exists(extpkgs_dir), "No extpkgs dir in release."
-srcpkgdir = pjoin(extpkgs_dir, pkg)
-assert os.path.exists(srcpkgdir), \
-    "The source package: %s for this proxy package is not in the release" % pkg
-PREFIX = pjoin(cdir, env['SIT_ARCH'], 'include')
-if not os.path.exists(PREFIX): os.mkdir(PREFIX)
-
-build_cmds_and_error_messages = [
-    ("DESTDIR=%s make" % PREFIX, "make failed"),
-    ("DESTDIR=%s make install" % PREFIX, "make install failed")
+buildcmds = [ 
+  "DESTDIR=%s make" % PREFIX,
+  "DESTDIR=%s make install" % PREFIX
 ]
 
-os.chdir(srcpkgdir)
-for cmd, err in build_cmds_and_error_messages:
-    print cmd
-    assert 0 == os.system(cmd), "%s: %s" % (msg, cmd)
-os.chdir(cdir)
+buildExternalPackage(pkg=pkg, buildcmds=buildcmds, PREFIX=PREFIX)
 
 INCDIR = "ndarray"
 DOCGEN = {'doxy-all': pjoin('arch', '$SIT_ARCH', 'geninc', pkg)}
