@@ -13,5 +13,5 @@ Import('*')
 from SConsTools.CondaMeta import condaPackageExists
 from SConsTools.standardCondaPackage import standardCondaPackage
 
-standardCondaPackage('ndarray', INCDIR='ndarray', LINKLIBS=None)
+standardCondaPackage('ndarray', INCDIR='include/ndarray', LINKLIBS=None)
 
